@@ -3,7 +3,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>WebAR PC Hardware Learning</title>
 <style>
-:root{--paper:#f1ebdf;--paper2:#e6dcc7;--ink:#1d1a16;--soft:#6b6355;--red:#c4452b;--rule:#cdc1a8;--serif:"Newsreader",Georgia,serif;--disp:"Fraunces","Newsreader",Georgia,serif;--mono:"DM Mono",ui-monospace,Menlo,monospace}
+:root{--paper:#f1ebdf;--paper2:#e6dcc7;--ink:#1d1a16;--soft:#6b6355;--red:#c4452b;--rule:#cdc1a8;--serif:"Source Sans 3",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--disp:"Source Serif 4",Georgia,"Times New Roman",serif;--mono:var(--serif)}
 @media(prefers-color-scheme:dark){:root{--paper:#1a1712;--paper2:#26221a;--ink:#efe6d3;--soft:#a79c86;--red:#e56a4f;--rule:#3b3529}}
 *{box-sizing:border-box}
 ::selection{background:var(--red);color:var(--paper)}
@@ -69,14 +69,41 @@ details p{margin:0 0 16px 2.9rem;color:var(--soft);max-width:28em;font-size:1rem
 .devtag{font:500 .7rem var(--mono);letter-spacing:.06em;color:var(--paper);background:var(--red);padding:6px 10px;display:inline-block;margin:0 0 18px}
 #xrc{position:fixed;inset:0;width:100%;height:100%}
 #ov{position:fixed;inset:0;display:none;flex-direction:column;justify-content:space-between;pointer-events:none;padding:calc(env(safe-area-inset-top) + 12px) 12px calc(env(safe-area-inset-bottom) + 14px)}
-#ov>*{pointer-events:auto}#ov>div:first-child{display:flex;flex-direction:column;align-items:flex-start}
+#ov>*{pointer-events:auto}.ovtop{display:flex;flex-direction:column;align-items:stretch}#hint{align-self:center}
 #hint{background:var(--paper);color:var(--ink);font:italic 1rem/1.35 var(--serif);padding:11px 16px;border:1.5px solid var(--ink);border-radius:3px 14px 4px 11px;max-width:84%;transform:rotate(-.8deg);box-shadow:3px 3px 0 var(--red)}
 #pp{display:none;background:var(--paper);color:var(--ink);max-height:42vh;overflow:auto;border:1.5px solid var(--ink);border-radius:4px 14px 3px 12px;padding:2px 14px 6px;margin-top:12px;width:100%}
-#ovb{display:flex;gap:12px;justify-content:flex-end;flex-wrap:wrap}#ovb button{padding:13px 18px;margin:0}#ovb button::after{content:none}
+#ovb{display:flex;gap:12px;justify-content:flex-start;flex-wrap:wrap}#ovb button{padding:13px 18px;margin:0}#ovb button::after{content:none}
+
+/* ---- Typography: formal and restrained (overrides the rules above) ---- */
+body{font-size:1rem;line-height:1.6}
+h1,h2,h3,h4{font-weight:600;letter-spacing:0}
+h1{font-size:clamp(1.7rem,6vw,2.2rem);line-height:1.2}
+h2{font-size:clamp(1.45rem,5vw,1.8rem);line-height:1.25}
+h4{font:600 .95rem var(--serif);text-transform:none;letter-spacing:0;color:var(--ink)}
+h3.notes{font:600 1.15rem var(--disp)}h3.notes em{font:400 .9rem var(--serif);text-transform:none;letter-spacing:0}
+.in{font-style:normal}
+.prog{font:600 .8rem var(--serif);letter-spacing:0}
+legend{font-weight:600}legend::before{font:600 .8rem var(--serif);letter-spacing:0;content:"Question " counter(qn)}
+label.o::before{font:400 1rem var(--serif)}
+label.o:has(input:checked){font-style:normal;font-weight:600}
+.lk label{font:600 1.05rem var(--serif)}
+.ends{font:400 .8rem var(--serif);text-transform:none;letter-spacing:0}
+button{font:600 .95rem var(--serif);text-transform:none;letter-spacing:0}
+button::after{content:none}
+textarea{font:400 1rem var(--serif)}
+.err{font:600 .85rem var(--serif);letter-spacing:0}
+figcaption{font:italic 400 .9rem var(--disp)}
+summary{font:600 1.05rem var(--serif)}summary::before{font:600 .8rem var(--serif)}summary::after{font:300 1.4rem var(--serif)}
+details[open] summary{font-style:normal}
+details p{font-size:.97rem}
+.devtag{font:600 .8rem var(--serif);letter-spacing:0}
+#hint{font:400 .98rem/1.4 var(--serif)}
+.devbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 18px}.devbar .devtag{margin:0}
+.devbar button{padding:8px 14px;box-shadow:none;font-size:.85rem}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
-</style><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=Newsreader:ital,opsz,wght@0,6..72,400..600;1,6..72,400&family=DM+Mono:wght@400;500&display=swap"></head><body>
+</style><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=Source+Sans+3:wght@400;600&display=swap"></head><body>
 <main id="app"></main>
-<div id="ov"><div><div id="hint"></div><div id="pp"></div></div><div id="ovb"><button id="pt">Parts</button><button id="rp" class="alt">Move model</button><button id="fin" disabled>Finish</button></div></div>
+<div id="ov"><div class="ovtop"><div id="ovb"><button id="pt">Parts</button><button id="rp" class="alt">Move model</button><button id="fin" disabled>Finish</button></div><div id="pp"></div></div><div id="hint"></div></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 /* ===== CONFIG: set SUBMIT_URL to a Google Apps Script web-app URL (or any endpoint accepting a POST) ===== */
@@ -183,7 +210,11 @@ function snapshot(view){const r=new THREE.WebGLRenderer({antialias:true,preserve
 
 /* ===== UI helpers ===== */
 const bar=()=>`<div class="prog"><span>${String(si).padStart(2,'0')} / ${String(steps.length-1).padStart(2,'0')}</span><i style="--p:${Math.round(si/(steps.length-1)*100)}%"></i></div>`;
-const screen=h=>{app.innerHTML=bar()+(DEV?'<p class="devtag">Developer mode: Skip buttons shown, waits removed, nothing is submitted.</p>':'')+h;scrollTo(0,0)};
+let cleanup=null;
+const back=()=>{if(si>0){si--;steps[si]()}};
+const screen=h=>{if(cleanup){cleanup();cleanup=null}
+ app.innerHTML=bar()+(DEV?`<div class="devbar"><span class="devtag">Developer mode: Skip shown, waits removed, nothing submitted.</span>${si>0?'<button type="button" class="alt" id="bk">Back</button>':''}</div>`:'')+h;
+ if(DEV&&si>0)$('#bk').onclick=back;scrollTo(0,0)};
 const skipBtn=()=>DEV?'<button type="button" class="alt" id="sk">Skip</button>':'';
 const next=()=>{si++;steps[si]()};
 const mc=(k,q,o)=>`<fieldset data-r data-n="${k}"><legend>${q}</legend>${o.map(v=>`<label class="o"><input type="radio" name="${k}" value="${v}"> ${v}</label>`).join('')}</fieldset>`;
@@ -202,7 +233,7 @@ function consent(){screen(`<h1>WebAR PC Hardware Learning</h1>
  $('#f').onsubmit=e=>{e.preventDefault();if(!$('#ok').checked){$('#e').textContent='Please tick the box to continue.';return}next()}}
 function about(){form('About you','Two quick questions.',
  mc('device','Which phone are you using?',['iPhone','Android','Other'])+mc('prior_ar','How often have you used AR before?',['Never','1 to 3 times','Often']),a=>{D.about=a;
- D.order=Math.random()<.5?['2d','ar']:['ar','2d'];D.forms=Math.random()<.5?['A','B']:['B','A'];
+ if(!D.order){D.order=Math.random()<.5?['2d','ar']:['ar','2d'];D.forms=Math.random()<.5?['A','B']:['B','A']}
  steps=[consent,about];D.order.forEach((m,i)=>steps.push(()=>stage(m,i),()=>quiz(m,D.forms[i]),()=>perc(m)));steps.push(compare,done);
  si=1;next()})}
 function stage(m,i){D.stages[m]=D.stages[m]||{pos:i+1};const t0=Date.now();
@@ -266,7 +297,8 @@ async function fallback(rec,fin){
  w.ontouchstart=w.ontouchmove=e=>{const t=e.touches;if(t.length===1){if(e.type==='touchmove'&&g.x!==null)spin(M,t[0].clientX-g.x,t[0].clientY-g.y);g.x=t[0].clientX;g.y=t[0].clientY;g.d=null}else if(t.length===2){const d=Math.hypot(t[0].clientX-t[1].clientX,t[0].clientY-t[1].clientY);if(g.d)M.scale.multiplyScalar(d/g.d);M.scale.clampScalar(.4,3);g.d=d;g.x=null}};
  w.ontouchend=()=>{g.x=null;g.d=null};
  (function loop(){if(!on)return;R.render(S,C);requestAnimationFrame(loop)})();
- const b=$('#go');timed(b,CONFIG.MIN_SECONDS,'Continue');b.onclick=()=>{on=false;R.dispose();if(stream)stream.getTracks().forEach(t=>t.stop());fin()}}
+ cleanup=()=>{on=false;R.dispose();if(stream)stream.getTracks().forEach(t=>t.stop())};
+ const b=$('#go');timed(b,CONFIG.MIN_SECONDS,'Continue');b.onclick=fin}
 
 consent();
 </script></body></html>
