@@ -183,61 +183,102 @@ function board(){
  const mat=(c,o)=>new THREE.MeshStandardMaterial(Object.assign({color:c,roughness:.5,metalness:0},o||{}));
  const add=(geo,m,x,y,z)=>{const o=new THREE.Mesh(geo,m);o.position.set(x,y,z);G.add(o);return o};
  const box=(w,h,d,c,x,y,z,o)=>add(new THREE.BoxGeometry(w,h,d),mat(c,o),x,y,z);
- const glass=(w,h,d,x,y,z)=>add(new THREE.BoxGeometry(w,h,d),mat(0x9fb4c0,{transparent:true,opacity:.14,depthWrite:false,roughness:.1}),x,y,z);
- const fan=(ax,x,y,z,sz,th)=>{th=th||.012;const f=new THREE.Group();f.position.set(x,y,z);G.add(f);
-  const fr=ax==='x'?[th,sz,sz]:ax==='y'?[sz,th,sz]:[sz,sz,th];
-  const frame=new THREE.Mesh(new THREE.BoxGeometry(...fr),mat(0x1d2125));f.add(frame);
-  const rot=o=>{if(ax==='x')o.rotation.z=Math.PI/2;if(ax==='z')o.rotation.x=Math.PI/2;return o};
-  f.add(rot(new THREE.Mesh(new THREE.CylinderGeometry(sz*.44,sz*.44,th*1.06,28),mat(0x4a5058))));
-  f.add(rot(new THREE.Mesh(new THREE.CylinderGeometry(sz*.14,sz*.14,th*1.12,18),mat(0x111417))));
-  for(let i=0;i<7;i++){const bl=new THREE.Mesh(new THREE.BoxGeometry(sz*.36,th*.3,sz*.09),mat(0x2b3036));const p=new THREE.Group();p.add(bl);bl.position.x=sz*.24;bl.rotation.x=.5;p.rotation.y=i*Math.PI*2/7;f.add(ax==='y'?p:(()=>{const q=new THREE.Group();q.add(p);if(ax==='x')q.rotation.z=Math.PI/2;else q.rotation.x=Math.PI/2;return q})())}
+ /* box with rounded corners (rounded in the x-y plane, depth along z) */
+ const rshape=(w,h,r)=>{const s=new THREE.Shape(),x=-w/2,y=-h/2;s.moveTo(x+r,y);s.lineTo(x+w-r,y);s.quadraticCurveTo(x+w,y,x+w,y+r);s.lineTo(x+w,y+h-r);s.quadraticCurveTo(x+w,y+h,x+w-r,y+h);s.lineTo(x+r,y+h);s.quadraticCurveTo(x,y+h,x,y+h-r);s.lineTo(x,y+r);s.quadraticCurveTo(x,y,x+r,y);return s};
+ const rbox=(w,h,d,r,c,x,y,z,o)=>{const ge=new THREE.ExtrudeGeometry(rshape(w,h,r),{depth:d,bevelEnabled:false,curveSegments:6});ge.translate(0,0,-d/2);return add(ge,mat(c,o),x,y,z)};
+ /* procedural textures, deterministic so every participant sees the same model */
+ let seed=11;const rnd=()=>(seed=seed*16807%2147483647)/2147483647;
+ const tex=(w,h,draw)=>{const c=document.createElement('canvas');c.width=w;c.height=h;draw(c.getContext('2d'),w,h);return new THREE.CanvasTexture(c)};
+ const pcbTex=tex(512,600,(k,w,h)=>{k.fillStyle='#0c5a43';k.fillRect(0,0,w,h);k.strokeStyle='rgba(70,190,140,.45)';k.lineWidth=2;
+  for(let i=0;i<70;i++){let x=rnd()*w,y=rnd()*h;k.beginPath();k.moveTo(x,y);for(let j=0;j<4;j++){rnd()<.5?x+=(rnd()-.5)*160:y+=(rnd()-.5)*160;k.lineTo(x,y)}k.stroke();k.fillStyle='rgba(200,170,90,.8)';k.fillRect(x-3,y-3,6,6)}
+  k.strokeStyle='rgba(235,240,235,.55)';k.lineWidth=2;[[150,40,150,150],[330,30,60,270],[60,330,330,30],[90,420,190,60]].forEach(r=>k.strokeRect(...r));
+  k.fillStyle='rgba(235,240,235,.55)';k.font='16px sans-serif';k.fillText('CPU',205,210);k.fillText('DDR',340,320);k.fillText('PCIE',100,328);k.fillText('M.2',120,455)});
+ const meshTex=tex(128,128,(k,w,h)=>{k.fillStyle='rgba(30,34,38,1)';k.fillRect(0,0,w,h);k.globalCompositeOperation='destination-out';for(let y=0;y<8;y++)for(let x=0;x<8;x++){k.beginPath();k.arc(x*16+8+(y%2)*8,y*16+8,5.2,0,7);k.fill()}});
+ meshTex.wrapS=meshTex.wrapT=THREE.RepeatWrapping;meshTex.repeat.set(9,9);
+ const glass=(w,h,d,x,y,z)=>add(new THREE.BoxGeometry(w,h,d),mat(0x9fb4c0,{transparent:true,opacity:.12,depthWrite:false,roughness:.05,metalness:.1}),x,y,z);
+ const tube=(pts,r,c)=>add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts.map(p=>new THREE.Vector3(...p))),24,r,8,false),mat(c,{roughness:.8}),0,0,0);
+ /* fan: square frame with a round opening, hub and angled blades; ax = direction the air moves through */
+ const fan=(ax,x,y,z,sz,th)=>{th=th||.012;const f=new THREE.Group();f.position.set(x,y,z);G.add(f);const inner=new THREE.Group();f.add(inner);
+  if(ax==='x')inner.rotation.y=Math.PI/2;if(ax==='y')inner.rotation.x=Math.PI/2;
+  const sh=rshape(sz,sz,sz*.12),hole=new THREE.Path();hole.absarc(0,0,sz*.46,0,Math.PI*2,true);sh.holes.push(hole);
+  const fg=new THREE.ExtrudeGeometry(sh,{depth:th,bevelEnabled:false,curveSegments:20});fg.translate(0,0,-th/2);inner.add(new THREE.Mesh(fg,mat(0x1b1f23,{roughness:.6})));
+  const hub=new THREE.Mesh(new THREE.CylinderGeometry(sz*.15,sz*.15,th*.8,24),mat(0x15181b));hub.rotation.x=Math.PI/2;inner.add(hub);
+  const cap=new THREE.Mesh(new THREE.CylinderGeometry(sz*.1,sz*.1,th*.82,24),mat(0x8d949b,{metalness:.6}));cap.rotation.x=Math.PI/2;inner.add(cap);
+  for(let i=0;i<9;i++){const p=new THREE.Group();p.rotation.z=i*Math.PI*2/9;const bl=new THREE.Mesh(new THREE.BoxGeometry(sz*.31,sz*.11,th*.18),mat(0x2e3339,{roughness:.4}));bl.position.x=sz*.3;bl.rotation.x=.55;p.add(bl);inner.add(p)}
   return f};
  const arrow=(x,y,z,dir)=>{const a=new THREE.Group(),m=mat(0x3d8fd6,{transparent:true,opacity:.75});
   const sh=new THREE.Mesh(new THREE.CylinderGeometry(.004,.004,.04,10),m);a.add(sh);
   const hd=new THREE.Mesh(new THREE.ConeGeometry(.01,.02,14),m);hd.position.y=.03;a.add(hd);
   a.rotation.z=dir*Math.PI/2;a.position.set(x,y,z);G.add(a)};
- /* case shell: back wall (motherboard tray) and floor solid, other panels glass, open on the viewer side */
- box(W,H,.004,0x2b2f33,0,H/2,-Dp/2+.002);box(W,.004,Dp,0x2b2f33,0,.002,0);
- glass(W,.004,Dp,0,H-.002,0);glass(.004,H,Dp,W/2-.002,H/2,0);glass(.004,H,Dp,-W/2+.002,H/2,0);
- const e=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(W,H,Dp)),new THREE.LineBasicMaterial({color:0x7d858c}));e.position.set(0,H/2,0);G.add(e);
- [[-.13,-.06],[-.13,.06],[.13,-.06],[.13,.06]].forEach(([x,z])=>add(new THREE.CylinderGeometry(.009,.011,.008,16),mat(0x15191c),x,-.004,z));
- /* motherboard */
- const zb=-Dp/2+.008;box(.17,.20,.004,0x0f6b4f,-.055,.20,zb-.002,{roughness:.7});
- for(let i=0;i<6;i++)box(.10,.0012,.0006,0x2fae84,-.07,.11+i*.03+(i%2)*.006,zb+.0003);
- /* CPU socket, cooler */
- box(.046,.046,.004,0xb9a46a,-.05,.25,zb+.002,{metalness:.6});box(.034,.034,.008,0xbfc4c8,-.05,.25,zb+.008,{metalness:.8});
- for(let i=0;i<14;i++)box(.034,.0022,.078,0xc9ced3,-.05,.218+i*.0048,zb+.049,{metalness:.85,roughness:.3});
- for(let i=0;i<3;i++)add(new THREE.CylinderGeometry(.0025,.0025,.07,10),mat(0xb87333,{metalness:.8}),-.06+i*.01,.25,zb+.03);
+
+ /* ---- case shell: solid tray and floor, glass top and rear, mesh front, open on the viewer side ---- */
+ const steel={metalness:.55,roughness:.45};
+ box(W,H,.004,0x25292d,0,H/2,-Dp/2+.002,steel);box(W,.004,Dp,0x25292d,0,.002,0,steel);
+ glass(W,.004,Dp,0,H-.002,0);glass(.004,H,Dp,-W/2+.002,H/2,0);
+ add(new THREE.BoxGeometry(.004,H,Dp),mat(0xffffff,{map:meshTex,transparent:true,roughness:.6,metalness:.3,side:THREE.DoubleSide}),W/2-.002,H/2,0);
+ const e=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(W,H,Dp)),new THREE.LineBasicMaterial({color:0x6d757c}));e.position.set(0,H/2,0);G.add(e);
+ [[-.13,-.06],[-.13,.06],[.13,-.06],[.13,.06]].forEach(([x,z])=>add(new THREE.CylinderGeometry(.009,.011,.008,20),mat(0x15191c,{roughness:.9}),x,-.004,z));
+ for(let i=0;i<3;i++)box(.002,.03,.014,0x8a9096,-W/2+.005,.07+i*.022,-.04,steel);                     /* rear slot covers */
+ [[.05,.19],[.05,.135],[-.13,.302]].forEach(([x,y])=>{const r=new THREE.Mesh(new THREE.TorusGeometry(.009,.003,8,20),mat(0x111417,{roughness:.9}));r.position.set(x,y,-Dp/2+.005);G.add(r)}); /* cable grommets */
+
+ /* ---- motherboard ---- */
+ const zb=-Dp/2+.008,pcbM=mat(0x0f6b4f,{roughness:.75}),pcbF=mat(0xffffff,{map:pcbTex,roughness:.7});
+ add(new THREE.BoxGeometry(.17,.20,.004),[pcbM,pcbM,pcbM,pcbM,pcbF,pcbM],-.055,.20,zb-.002);
+ [[-.135,.295],[.025,.295],[-.135,.105],[.025,.105],[-.055,.2]].forEach(([x,y])=>add(new THREE.CylinderGeometry(.003,.003,.002,12),mat(0xc9ced3,{metalness:.9}),x,y,zb+.001).rotation.x=Math.PI/2);
+ box(.012,.05,.012,0x3a4048,-.085,.25,zb+.006,{metalness:.7,roughness:.35});box(.045,.01,.012,0x3a4048,-.055,.292,zb+.006,{metalness:.7,roughness:.35}); /* VRM heatsinks */
+ rbox(.02,.02,.005,.003,0x4c535b,.017,.108,zb+.0025,{metalness:.7,roughness:.3});                       /* chipset heatsink */
+ box(.008,.034,.01,0xe9e4d6,.022,.225,zb+.005);                                                       /* 24-pin connector */
+ box(.012,.007,.008,0xe9e4d6,-.128,.296,zb+.004);                                                      /* CPU power connector */
+ /* ---- CPU socket and tower cooler ---- */
+ box(.046,.046,.004,0xb9a46a,-.05,.25,zb+.002,{metalness:.6});box(.034,.034,.008,0xbfc4c8,-.05,.25,zb+.008,{metalness:.85,roughness:.25});
+ for(let i=0;i<14;i++)box(.034,.0018,.078,0xd3d7db,-.05,.218+i*.0048,zb+.049,{metalness:.9,roughness:.25});
+ box(.036,.004,.08,0x1d2125,-.05,.2835,zb+.049,{roughness:.4});                                       /* top cap */
+ for(let i=0;i<3;i++)add(new THREE.CylinderGeometry(.0025,.0025,.075,12),mat(0xb87333,{metalness:.9,roughness:.25}),-.06+i*.01,.25,zb+.03);
  fan('x',-.05+.017+.007,.25,zb+.049,.066);
- /* RAM */
- [-.012,-.002].forEach(x=>{box(.0045,.088,.032,0x1b1f23,x,.245,zb+.016);box(.0047,.088,.004,0xc4452b,x,.245,zb+.03)});
- /* M.2 SSD */
- box(.06,.018,.003,0x1b1f23,-.05,.19,zb+.0015);box(.036,.012,.0006,0xd9d9d9,-.05,.19,zb+.0033);
- /* PCIe slot + graphics card (fans face down) */
+ /* ---- RAM ---- */
+ [-.012,-.002].forEach(x=>{box(.0045,.088,.03,0x1b1f23,x,.245,zb+.015,{metalness:.4,roughness:.4});box(.0048,.088,.004,0xc4452b,x,.245,zb+.03,{roughness:.4});box(.0046,.084,.002,0xd9b45a,x,.245,zb+.001,{metalness:.9})});
+ /* ---- M.2 SSD ---- */
+ box(.06,.018,.003,0x1b1f23,-.05,.19,zb+.0015);box(.036,.012,.0006,0xd9d9d9,-.05,.19,zb+.0033);box(.012,.012,.001,0x2b2f33,-.07,.19,zb+.0035,{metalness:.5});
+ /* ---- graphics card: rounded shroud, backplate, power connector; fans face down ---- */
  box(.09,.006,.008,0x15191c,-.06,.152,zb+.004);
- box(.17,.03,.058,0x2a2e33,-.04,.135,zb+.029);box(.17,.002,.058,0x9aa0a6,-.04,.151,zb+.029,{metalness:.7});
- box(.004,.034,.022,0xa0a6ac,-.128,.135,zb+.012,{metalness:.7});
+ rbox(.17,.022,.058,.005,0x2a2e33,-.04,.139,zb+.029,{roughness:.35,metalness:.3});
+ box(.168,.002,.058,0x9aa0a6,-.04,.151,zb+.029,{metalness:.8,roughness:.3});
+ box(.15,.0025,.0008,0xc4452b,-.035,.139,zb+.0585);                                                     /* accent stripe on the outer face */
+ for(let i=0;i<34;i++)box(.0011,.0068,.054,0x9aa1a8,-.123+i*.005,.1245,zb+.029,{metalness:.85,roughness:.3});            /* heatsink fins between shroud and fans */
+ box(.004,.034,.022,0xa0a6ac,-.128,.135,zb+.012,{metalness:.8});
+ box(.016,.006,.008,0x111417,.025,.1545,zb+.045);
  fan('y',-.085,.117,zb+.03,.046,.008);fan('y',-.005,.117,zb+.03,.046,.008);
- /* I/O ports */
- box(.02,.06,.03,0xc8ccd0,-.135,.265,zb+.015,{metalness:.6});for(let i=0;i<4;i++)box(.003,.008,.012,i==1?0x2a5fd0:0x15191c,-.1465,.245+i*.013,zb+.015);
- /* power supply, bottom rear */
- box(.10,.07,.12,0x1f2326,-.096,.039,-.005);box(.05,.03,.0008,0xc9cdd1,-.096,.045,.0555);fan('y',-.096,.0035,-.005,.07,.003);
- /* drive cage, bottom front */
- box(.08,.08,.003,0x5b6168,.10,.044,-.055,{metalness:.5});box(.08,.08,.003,0x5b6168,.10,.044,.055,{metalness:.5});box(.08,.003,.11,0x5b6168,.10,.084,0,{metalness:.5});
- [.03,.058].forEach(y=>box(.072,.016,.10,0xb5bac0,.10,y,0,{metalness:.7,roughness:.35}));
- /* fans */
+ /* ---- I/O ---- */
+ box(.02,.06,.03,0xc8ccd0,-.135,.265,zb+.015,{metalness:.7,roughness:.3});for(let i=0;i<4;i++)box(.003,.008,.012,i==1?0x2a5fd0:0x15191c,-.1465,.245+i*.013,zb+.015);
+ /* ---- power supply, bottom rear ---- */
+ rbox(.10,.07,.12,.006,0x1f2326,-.096,.039,-.005,{roughness:.4,metalness:.4});
+ box(.05,.03,.0008,0xaeb4ba,-.096,.045,.0555,{roughness:.6});fan('y',-.096,.0035,-.005,.07,.003);
+ box(.03,.012,.004,0x111417,-.06,.06,.0555);                                                          /* modular sockets */
+ /* ---- drive cage, bottom front ---- */
+ box(.08,.08,.003,0x5b6168,.10,.044,-.055,steel);box(.08,.08,.003,0x5b6168,.10,.044,.055,steel);box(.08,.003,.11,0x5b6168,.10,.084,0,steel);
+ [.03,.058].forEach(y=>{rbox(.072,.016,.10,.002,0xb5bac0,.10,y,0,{metalness:.8,roughness:.3});box(.03,.01,.0006,0xe6e6e6,.10,y,.0503)});
+ /* ---- fans and airflow ---- */
  fan('x',W/2-.012,.14,0,.085);fan('x',W/2-.012,.235,0,.085);fan('x',-W/2+.012,.25,.02,.075);
  arrow(.10,.14,0,1);arrow(.10,.235,0,1);arrow(-.18,.25,.02,1);
- /* labels */
+ /* ---- cables (routed through the tray grommets) ---- */
+ tube([[.026,.225,zb+.008],[.04,.222,zb+.012],[.05,.205,zb+.008],[.05,.19,-Dp/2+.006]],.0055,0x16191c);
+ tube([[-.128,.3,zb+.006],[-.13,.306,zb+.01],[-.13,.302,-Dp/2+.006]],.0028,0x16191c);
+ tube([[.025,.158,zb+.045],[.04,.165,zb+.035],[.05,.15,zb+.012],[.05,.135,-Dp/2+.006]],.0035,0x16191c);
+ /* ---- labels ---- */
  const lab=(t,x,y,z)=>{const c=document.createElement('canvas');c.width=512;c.height=128;const k=c.getContext('2d');k.fillStyle='rgba(16,36,31,.9)';k.fillRect(0,0,512,128);k.fillStyle='#fff';k.font='bold 50px system-ui,sans-serif';k.textAlign='center';k.textBaseline='middle';k.fillText(t,256,64);
   const q=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),depthTest:false}));q.renderOrder=9;q.scale.set(.07,.0175,1);q.position.set(x,y,z);G.add(q)};
- lab('CPU cooler',-.05,.305,.03);lab('RAM slots',.01,.30,-.03);lab('M.2 SSD',-.075,.19,-.05);lab('Graphics card',-.04,.10,.03);
+ lab('CPU cooler',-.05,.305,.03);lab('RAM slots',.01,.30,-.03);lab('M.2 SSD',-.075,.19,-.05);lab('Graphics card',-.04,.139,zb+.064);
  lab('Motherboard',.0,.175,-.06);lab('Power supply',-.096,.088,.065);lab('Drive cage',.10,.10,.065);lab('Front fans',.125,.30,.03);
  lab('Rear fan',-.13,.305,.045);lab('I/O ports',-.135,.225,-.045);
  return g}
-function lights(s){s.add(new THREE.HemisphereLight(0xffffff,0x445566,1.1));const d=new THREE.DirectionalLight(0xffffff,.8);d.position.set(.3,1,.4);s.add(d)}
+function lights(s,r){s.add(new THREE.HemisphereLight(0xffffff,0x445566,.9));const d=new THREE.DirectionalLight(0xffffff,.8);d.position.set(.3,1,.4);s.add(d);
+ if(!r||!THREE.PMREMGenerator)return;
+ try{const c=document.createElement('canvas');c.width=256;c.height=128;const k=c.getContext('2d'),gr=k.createLinearGradient(0,0,0,128);
+  gr.addColorStop(0,'#ffffff');gr.addColorStop(.45,'#cfd6db');gr.addColorStop(.55,'#8d969d');gr.addColorStop(1,'#2e3337');k.fillStyle=gr;k.fillRect(0,0,256,128);
+  k.fillStyle='#ffffff';k.fillRect(30,18,50,22);k.fillRect(150,14,70,18);
+  const t=new THREE.CanvasTexture(c);t.mapping=THREE.EquirectangularReflectionMapping;const pm=new THREE.PMREMGenerator(r);s.environment=pm.fromEquirectangular(t).texture;pm.dispose();t.dispose()}catch(e){}}
 function snapshot(view){const r=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});r.setSize(1000,880);r.setClearColor(0xeef2ec);
- const s=new THREE.Scene(),c=new THREE.PerspectiveCamera(30,1000/880,.01,5);lights(s);s.add(board());
+ const s=new THREE.Scene(),c=new THREE.PerspectiveCamera(30,1000/880,.01,5);lights(s,r);s.add(board());
  if(view==='side')c.position.set(0,0,.85);else c.position.set(.48,.26,.62);c.lookAt(0,-.01,0);r.render(s,c);
  const u=r.domElement.toDataURL('image/jpeg',.9);r.dispose();return u}
 
@@ -302,7 +343,7 @@ async function startAR(rec,fin){
 async function webxr(rec,fin){
  const o=$('#ov'),hint=$('#hint'),dbg=$('#dbg'),R=new THREE.WebGLRenderer({antialias:true,alpha:true});
  R.setPixelRatio(devicePixelRatio);R.setSize(innerWidth,innerHeight);R.xr.enabled=true;R.domElement.id='xrc';
- const S=new THREE.Scene(),C=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,.01,20);lights(S);
+ const S=new THREE.Scene(),C=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,.01,20);lights(S,R);
  const M=board();M.visible=false;S.add(M);
  const ring=new THREE.Mesh(new THREE.RingGeometry(.07,.09,32).rotateX(-Math.PI/2),new THREE.MeshBasicMaterial({color:0xe0a100}));ring.matrixAutoUpdate=false;ring.visible=false;S.add(ring);
  const s=await navigator.xr.requestSession('immersive-ar',{requiredFeatures:['hit-test'],optionalFeatures:['dom-overlay'],domOverlay:{root:o}});
@@ -338,7 +379,7 @@ async function fallback(rec,fin){
  screen(`<h2>Study the PC case in 3D</h2><p class="in">AR surface tracking is not available on this phone or browser, so use this 3D view instead.<br><small>Reason: ${rec.arReason||'unknown'}</small> Drag sideways to turn it, drag up or down to tilt it, and pinch to resize. You will be quizzed from memory afterwards.</p><div id="fbw"><video id="fv" playsinline muted autoplay></video></div><div class="acts"><button id="go"></button><button type="button" class="alt" id="rsv">Reset view</button></div><h3 class="notes">Component descriptions<em>Tap a part to read about it</em></h3>${partsHTML()}`);track($('.pts'),rec);
  const t0=Date.now();let stream=null;try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});$('#fv').srcObject=stream}catch(e){rec.camera='denied'}
  const R=new THREE.WebGLRenderer({antialias:true,alpha:true}),w=$('#fbw');R.setPixelRatio(devicePixelRatio);R.setSize(w.clientWidth,w.clientHeight);w.appendChild(R.domElement);
- const S=new THREE.Scene(),C=new THREE.PerspectiveCamera(45,w.clientWidth/w.clientHeight,.01,5);lights(S);const M=board();S.add(M);C.position.set(.30,.18,.62);C.lookAt(0,0,0);M.rotation.y=Math.atan2(.30,.62);
+ const S=new THREE.Scene(),C=new THREE.PerspectiveCamera(45,w.clientWidth/w.clientHeight,.01,5);lights(S,R);const M=board();S.add(M);C.position.set(.30,.18,.62);C.lookAt(0,0,0);M.rotation.y=Math.atan2(.30,.62);
  let on=true;const q0=M.quaternion.clone(),ctl=controls(w,M,()=>C.position,()=>true);
  $('#rsv').onclick=()=>{M.quaternion.copy(q0);M.scale.setScalar(1);ctl.sync()};
  (function loop(){if(!on)return;ctl.update();R.render(S,C);requestAnimationFrame(loop)})();
