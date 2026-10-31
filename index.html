@@ -69,7 +69,7 @@ details p{margin:0 0 16px 2.9rem;color:var(--soft);max-width:28em;font-size:1rem
 .devtag{font:500 .7rem var(--mono);letter-spacing:.06em;color:var(--paper);background:var(--red);padding:6px 10px;display:inline-block;margin:0 0 18px}
 #xrc{position:fixed;inset:0;width:100%;height:100%}
 #ov{position:fixed;inset:0;display:none;flex-direction:column;justify-content:space-between;pointer-events:none;padding:calc(env(safe-area-inset-top) + 12px) 12px calc(env(safe-area-inset-bottom) + 14px)}
-#ov>*{pointer-events:auto}#tl{position:absolute;inset:0;z-index:0}.ovtop,#hint{position:relative;z-index:1}#dbg{display:none;margin-top:8px;background:rgba(0,0,0,.6);color:#fff;font:600 .75rem var(--serif);padding:4px 8px;align-self:flex-start}.ovtop{display:flex;flex-direction:column;align-items:stretch}#hint{align-self:center}
+#ov>*{pointer-events:auto}#tl{position:absolute;inset:0;z-index:0;touch-action:none}.ovtop,#hint{position:relative;z-index:1}#dbg{display:none;margin-top:8px;background:rgba(0,0,0,.6);color:#fff;font:600 .75rem var(--serif);padding:4px 8px;align-self:flex-start}.ovtop{display:flex;flex-direction:column;align-items:stretch}#hint{align-self:center}
 #hint{background:var(--paper);color:var(--ink);font:italic 1rem/1.35 var(--serif);padding:11px 16px;border:1.5px solid var(--ink);border-radius:3px 14px 4px 11px;max-width:84%;transform:rotate(-.8deg);box-shadow:3px 3px 0 var(--red)}
 #pp{display:none;background:var(--paper);color:var(--ink);max-height:42vh;overflow:auto;border:1.5px solid var(--ink);border-radius:4px 14px 3px 12px;padding:2px 14px 6px;margin-top:12px;width:100%}
 #ovb{display:flex;gap:12px;justify-content:flex-start;flex-wrap:wrap}#ovb button{padding:13px 18px;margin:0}#ovb button::after{content:none}
@@ -103,7 +103,7 @@ details p{font-size:.97rem}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
 </style><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=Source+Sans+3:wght@400;600&display=swap"></head><body>
 <main id="app"></main>
-<div id="ov"><div id="tl"></div><div class="ovtop"><div id="ovb"><button id="pt">Parts</button><button id="rp" class="alt">Move model</button><button id="fin" disabled>Finish</button></div><div id="pp"></div><div id="dbg"></div></div><div id="hint"></div></div>
+<div id="ov"><div id="tl"></div><div class="ovtop"><div id="ovb"><button id="pt">Parts</button><button id="rs" class="alt">Reset view</button><button id="rp" class="alt">Move model</button><button id="fin" disabled>Finish</button></div><div id="pp"></div><div id="dbg"></div></div><div id="hint"></div></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 /* ===== CONFIG: set SUBMIT_URL to a Google Apps Script web-app URL (or any endpoint accepting a POST) ===== */
@@ -144,7 +144,33 @@ const PARTS=[['Motherboard','The main circuit board. Every other component conne
 ['I/O ports','The back-panel connectors for external devices such as USB drives, monitors, network cables and audio jacks.']];
 const partsHTML=()=>'<div class="pts">'+PARTS.map(([n,t])=>`<details><summary>${n}</summary><p>${t}</p></details>`).join('')+'</div>';
 const track=(el,rec)=>{rec.partsOpened=rec.partsOpened||[];el.addEventListener('toggle',e=>{if(e.target.open)rec.partsOpened.push(e.target.querySelector('summary').textContent)},true)};
-const spin=(m,dx,dy)=>m.quaternion.premultiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(dy*.01,dx*.01,0)));
+/* ===== Model controls =====
+ One finger: drag sideways to turn the model around its vertical axis; drag up or down to tilt it toward or away from you.
+ Each drag locks to one direction, so the model never wobbles diagonally. Two fingers: pinch to resize.
+ Movement is smoothed and glides briefly after release. Works with touch and mouse (mouse wheel resizes). */
+function controls(el,M,camPos,enabled){
+ const K=.009,UP=new THREE.Vector3(0,1,0),tq=M.quaternion.clone(),pts=new Map();
+ let ts=M.scale.x,lock=null,sx=0,sy=0,lx=0,ly=0,vx=0,vy=0,pd=0;
+ const turn=(dx,dy)=>{
+  if(dx)tq.premultiply(new THREE.Quaternion().setFromAxisAngle(UP,dx*K));
+  if(dy){const c=camPos();if(!c)return;const d=new THREE.Vector3(c.x-M.position.x,0,c.z-M.position.z);if(d.lengthSq()<1e-6)return;d.normalize();
+   const right=new THREE.Vector3().crossVectors(UP,d);   /* the viewer's right-hand direction: dragging down tips the top toward the viewer */
+   tq.premultiply(new THREE.Quaternion().setFromAxisAngle(right,dy*K))}};
+ const dist=()=>{const [a,b]=[...pts.values()];return Math.hypot(a.x-b.x,a.y-b.y)};
+ el.addEventListener('pointerdown',e=>{if(!enabled())return;pts.set(e.pointerId,{x:e.clientX,y:e.clientY});vx=vy=0;
+  if(pts.size===1){sx=lx=e.clientX;sy=ly=e.clientY;lock=null}else if(pts.size===2){pd=dist();lock='pinch'}});
+ el.addEventListener('pointermove',e=>{if(!pts.has(e.pointerId)||!enabled())return;pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(pts.size>=2){const d=dist();if(pd)ts=Math.min(3,Math.max(.4,ts*d/pd));pd=d;return}
+  if(lock==='pinch')return;
+  if(!lock){if(Math.abs(e.clientX-sx)+Math.abs(e.clientY-sy)<8)return;lock=Math.abs(e.clientX-sx)>Math.abs(e.clientY-sy)?'h':'v';lx=e.clientX;ly=e.clientY;return}
+  const dx=lock==='h'?e.clientX-lx:0,dy=lock==='v'?e.clientY-ly:0;lx=e.clientX;ly=e.clientY;turn(dx,dy);vx=dx;vy=dy});
+ const up=e=>{pts.delete(e.pointerId);if(pts.size===1){const [q]=[...pts.values()];sx=lx=q.x;sy=ly=q.y;lock='pinch';vx=vy=0}if(!pts.size)lock=null};
+ ['pointerup','pointercancel','pointerleave'].forEach(n=>el.addEventListener(n,up));
+ el.addEventListener('wheel',e=>{if(!enabled())return;e.preventDefault();ts=Math.min(3,Math.max(.4,ts*(e.deltaY<0?1.08:.93)))},{passive:false});
+ return{
+  update(){if(!pts.size&&(Math.abs(vx)>.05||Math.abs(vy)>.05)){turn(vx,vy);vx*=.9;vy*=.9}
+   M.quaternion.slerp(tq,.25);const k=M.scale.x+(ts-M.scale.x)*.25;M.scale.setScalar(k)},
+  sync(){tq.copy(M.quaternion);ts=M.scale.x;vx=vy=0}}}
 function board(){
  const W=.30,H=.32,Dp=.15,g=new THREE.Group(),G=new THREE.Group();G.position.y=-H/2;g.add(G);
  const mat=(c,o)=>new THREE.MeshStandardMaterial(Object.assign({color:c,roughness:.5,metalness:0},o||{}));
@@ -246,7 +272,7 @@ function stage(m,i){D.stages[m]=D.stages[m]||{pos:i+1};const t0=Date.now();
 <div class="acts"><button id="go"></button>${skipBtn()}</div>
 <h3 class="notes">Component descriptions<em>Tap a part to read about it</em></h3>${partsHTML()}`);
   track($('.pts'),D.stages[m]);const b=$('#go');timed(b,CONFIG.MIN_SECONDS,'Continue');b.onclick=fin;if(DEV)$('#sk').onclick=skip}
- else{screen(`<h2>Study the PC case in AR</h2><p class="in">Point your camera at a flat surface such as a table. When the yellow ring appears, tap to place the case. Drag to spin it in any direction, pinch to resize, and tap Parts to read about each component. You will be quizzed from memory afterwards.</p><div class="acts"><button id="go">Start AR</button>${skipBtn()}</div>`);
+ else{screen(`<h2>Study the PC case in AR</h2><p class="in">Point your camera at a flat surface such as a table. When the yellow ring appears, tap to place the case. Drag sideways to turn it, drag up or down to tilt it, pinch to resize, and tap Parts to read about each component. You will be quizzed from memory afterwards.</p><div class="acts"><button id="go">Start AR</button>${skipBtn()}</div>`);
   $('#go').onclick=()=>startAR(D.stages[m],fin);if(DEV)$('#sk').onclick=skip}}
 function quiz(m,f){const items=BANK[f].map(x=>({...x,o:shuffle(x.o)}));D.stages[m].form=f;
  form('Quiz from memory','Do not go back to the model. Choose the best answer.',items.map((x,i)=>mc('q'+i,x.q,x.o)).join(''),a=>{
@@ -281,35 +307,34 @@ async function webxr(rec,fin){
  const fb=$('#fin');timed(fb,CONFIG.MIN_SECONDS,'Finish');fb.onclick=()=>s.end();
  /* turn the case so its open side faces the viewer */
  const face=()=>{if(!vp)return;const p=vp.transform.position;M.rotation.set(0,Math.atan2(p.x-M.position.x,p.z-M.position.z),0)};
- const place=(how)=>{placed=true;rec.placement=how;M.visible=true;ring.visible=false;M.scale.setScalar(1);face();placeT=placeT||Math.round((Date.now()-t0)/1000);
-  say(how==='surface'?'Drag to spin in any direction, pinch to resize.':'No flat surface was found, so the case is floating in front of you. Drag to spin, pinch to resize, or tap Move model to try a surface again.')};
+ const place=(how)=>{placed=true;rec.placement=how;M.visible=true;ring.visible=false;M.scale.setScalar(1);face();ctl.sync();placeT=placeT||Math.round((Date.now()-t0)/1000);
+  say(how==='surface'?'Drag sideways to turn, drag up or down to tilt, pinch to resize.':'No flat surface was found, so the case is floating in front of you. Drag to turn or tilt, pinch to resize, or tap Move model to try a surface again.')};
  const float=()=>{if(!vp)return;const p=vp.transform.position,q=vp.transform.orientation;
   const f=new THREE.Vector3(0,0,-1).applyQuaternion(new THREE.Quaternion(q.x,q.y,q.z,q.w));f.y=0;f.normalize();
   M.position.set(p.x+f.x*.7,p.y-.15,p.z+f.z*.7);place('floating')};
+ const ctl=controls(o,M,()=>vp&&vp.transform.position,()=>placed);
+ $('#rs').onclick=()=>{M.scale.setScalar(1);face();ctl.sync()};
  $('#rp').onclick=()=>{placed=false;M.visible=false;searchT=Date.now();say('Aim at a flat surface and tap the screen when the yellow ring appears.')};
  const pp=$('#pp');pp.innerHTML=partsHTML();pp.style.display='none';track(pp,rec);$('#pt').onclick=()=>{pp.style.display=pp.style.display==='block'?'none':'block'};pp.ontouchstart=pp.ontouchmove=e=>e.stopPropagation();
  for(const b of [...o.querySelectorAll('button'),pp])b.addEventListener('beforexrselect',e=>e.preventDefault());
+ pp.addEventListener('pointerdown',e=>e.stopPropagation());for(const b of o.querySelectorAll('button'))b.addEventListener('pointerdown',e=>e.stopPropagation());
  s.addEventListener('select',()=>{if(!placed&&hit){M.position.setFromMatrixPosition(ring.matrix);M.position.y+=.17;place('surface')}});
- const g={x:null,y:null,d:null};
- o.ontouchstart=o.ontouchmove=e=>{if(!placed)return;const t=e.touches;if(t.length===1){if(e.type==='touchmove'&&g.x!==null)spin(M,t[0].clientX-g.x,t[0].clientY-g.y);g.x=t[0].clientX;g.y=t[0].clientY;g.d=null}else if(t.length===2){const d=Math.hypot(t[0].clientX-t[1].clientX,t[0].clientY-t[1].clientY);if(g.d)M.scale.multiplyScalar(d/g.d);M.scale.clampScalar(.4,3);g.d=d;g.x=null}};
- o.ontouchend=()=>{g.x=null;g.d=null};
  R.setAnimationLoop((t,f)=>{if(f){const rs=R.xr.getReferenceSpace();vp=f.getViewerPose(rs)||vp;
   if(!asked){asked=true;s.requestReferenceSpace('viewer').then(v=>s.requestHitTestSource({space:v})).then(h=>{src=h;hitState='ready'}).catch(e=>{hitState='failed ('+(e&&e.name||e)+')';rec.hitTestError=String(e&&e.message||e)})}
   if(!placed){
    if(src){const h=f.getHitTestResults(src);if(h.length){hits++;ring.matrix.fromArray(h[0].getPose(rs).transform.matrix);ring.visible=hit=true;say('Tap the screen to place the case on the yellow ring.')}else{ring.visible=hit=false}}
    if(!hit&&Date.now()-searchT>8000)float();}
   status()}
-  R.render(S,C)});
+  if(placed)ctl.update();R.render(S,C)});
  s.addEventListener('end',()=>{R.setAnimationLoop(null);R.dispose();R.domElement.remove();o.style.display='none';pp.style.display='none';dbg.style.display='none';rec.placedAtSec=placeT;rec.placed=placed;fin()})}
 async function fallback(rec,fin){
- screen(`<h2>Study the PC case in 3D</h2><p class="in">AR surface tracking is not available on this phone or browser, so use this 3D view instead.<br><small>Reason: ${rec.arReason||'unknown'}</small> Drag to spin it in any direction and pinch to resize. You will be quizzed from memory afterwards.</p><div id="fbw"><video id="fv" playsinline muted autoplay></video></div><div class="acts"><button id="go"></button></div><h3 class="notes">Component descriptions<em>Tap a part to read about it</em></h3>${partsHTML()}`);track($('.pts'),rec);
+ screen(`<h2>Study the PC case in 3D</h2><p class="in">AR surface tracking is not available on this phone or browser, so use this 3D view instead.<br><small>Reason: ${rec.arReason||'unknown'}</small> Drag sideways to turn it, drag up or down to tilt it, and pinch to resize. You will be quizzed from memory afterwards.</p><div id="fbw"><video id="fv" playsinline muted autoplay></video></div><div class="acts"><button id="go"></button><button type="button" class="alt" id="rsv">Reset view</button></div><h3 class="notes">Component descriptions<em>Tap a part to read about it</em></h3>${partsHTML()}`);track($('.pts'),rec);
  const t0=Date.now();let stream=null;try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});$('#fv').srcObject=stream}catch(e){rec.camera='denied'}
  const R=new THREE.WebGLRenderer({antialias:true,alpha:true}),w=$('#fbw');R.setPixelRatio(devicePixelRatio);R.setSize(w.clientWidth,w.clientHeight);w.appendChild(R.domElement);
- const S=new THREE.Scene(),C=new THREE.PerspectiveCamera(45,w.clientWidth/w.clientHeight,.01,5);lights(S);const M=board();S.add(M);C.position.set(.32,.2,.62);C.lookAt(0,0,0);
- const g={x:null,y:null,d:null};let on=true;
- w.ontouchstart=w.ontouchmove=e=>{const t=e.touches;if(t.length===1){if(e.type==='touchmove'&&g.x!==null)spin(M,t[0].clientX-g.x,t[0].clientY-g.y);g.x=t[0].clientX;g.y=t[0].clientY;g.d=null}else if(t.length===2){const d=Math.hypot(t[0].clientX-t[1].clientX,t[0].clientY-t[1].clientY);if(g.d)M.scale.multiplyScalar(d/g.d);M.scale.clampScalar(.4,3);g.d=d;g.x=null}};
- w.ontouchend=()=>{g.x=null;g.d=null};
- (function loop(){if(!on)return;R.render(S,C);requestAnimationFrame(loop)})();
+ const S=new THREE.Scene(),C=new THREE.PerspectiveCamera(45,w.clientWidth/w.clientHeight,.01,5);lights(S);const M=board();S.add(M);C.position.set(.30,.18,.62);C.lookAt(0,0,0);M.rotation.y=Math.atan2(.30,.62);
+ let on=true;const q0=M.quaternion.clone(),ctl=controls(w,M,()=>C.position,()=>true);
+ $('#rsv').onclick=()=>{M.quaternion.copy(q0);M.scale.setScalar(1);ctl.sync()};
+ (function loop(){if(!on)return;ctl.update();R.render(S,C);requestAnimationFrame(loop)})();
  cleanup=()=>{on=false;R.dispose();if(stream)stream.getTracks().forEach(t=>t.stop())};
  const b=$('#go');timed(b,CONFIG.MIN_SECONDS,'Continue');b.onclick=fin}
 
