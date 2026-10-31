@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>WebAR PC Hardware Learning</title>
+<style>
+:root{--paper:#f1ebdf;--paper2:#e6dcc7;--ink:#1d1a16;--soft:#6b6355;--red:#c4452b;--rule:#cdc1a8;--serif:"Newsreader",Georgia,serif;--disp:"Fraunces","Newsreader",Georgia,serif;--mono:"DM Mono",ui-monospace,Menlo,monospace}
+@media(prefers-color-scheme:dark){:root{--paper:#1a1712;--paper2:#26221a;--ink:#efe6d3;--soft:#a79c86;--red:#e56a4f;--rule:#3b3529}}
+*{box-sizing:border-box}
+::selection{background:var(--red);color:var(--paper)}
+body{margin:0;background:var(--paper) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .3 0 0 0 0 .25 0 0 0 0 .15 0 0 0 .08 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");color:var(--ink);font:1.08rem/1.62 var(--serif);padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);-webkit-font-smoothing:antialiased}
+main{max-width:680px;margin:0 auto;padding:22px 22px 90px}
+@media(min-width:900px){main{margin:0 0 0 14vw;padding-top:40px}}
+h1,h2,h3,h4{font-family:var(--disp);font-weight:380;margin:0}
+h1{font-size:clamp(1.9rem,7vw,2.6rem);line-height:1.1;letter-spacing:-.01em;margin:6px 0 14px}
+h1 em,h2 em{color:var(--red);font-weight:300}
+h2{font-size:clamp(1.9rem,7vw,2.5rem);line-height:1.04;letter-spacing:-.015em}
+h2::after{content:"";display:block;width:min(10em,72%);height:9px;margin:8px 0 0 3px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 9' preserveAspectRatio='none'%3E%3Cpath d='M1 5C20 1 40 8 62 4S105 2 130 6S175 3 199 5' fill='none' stroke='%23c4452b' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat;background-size:100% 100%}
+h4{font:500 .72rem var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--red);margin:26px 0 4px}
+h3.notes{font:italic 400 1.45rem var(--disp);margin:34px 0 6px}h3.notes em{display:block;font:500 .7rem var(--mono);font-style:normal;letter-spacing:.12em;text-transform:uppercase;color:var(--soft);margin-top:4px}
+p{margin:.6em 0}main>p:not(.in),h4+p{margin-left:1.6rem;max-width:30em}
+.in,small{color:var(--soft)}.in{font-style:italic;max-width:29em;margin:.9em 0 1.8em 1.6rem}
+.prog{display:flex;align-items:center;gap:12px;margin:0 0 30px;font:500 .72rem var(--mono);letter-spacing:.14em;color:var(--soft)}
+.prog i{flex:1;height:7px;position:relative}.prog i::before{content:"";position:absolute;left:0;right:0;top:3px;height:1px;background:var(--rule)}
+.prog i::after{content:"";position:absolute;left:0;top:2px;height:3px;width:var(--p);background:var(--ink);border-radius:2px 5px 3px 6px;transform:rotate(-.5deg);transform-origin:left}
+.stamp{float:right;width:96px;height:96px;margin:2px 0 8px 14px;shape-outside:circle();border:2px solid var(--red);border-radius:50% 46% 53% 48%;display:grid;place-items:center;text-align:center;color:var(--red);font:500 .64rem/1.35 var(--mono);letter-spacing:.1em;text-transform:uppercase;transform:rotate(11deg);box-shadow:inset 0 0 0 4px var(--paper),inset 0 0 0 5.5px var(--red)}
+form{counter-reset:qn}
+fieldset{border:0;margin:0 0 38px;padding:0;counter-increment:qn;counter-reset:o}
+fieldset:nth-of-type(even){margin-left:1.5rem}fieldset:nth-of-type(3n){margin-left:.5rem}
+legend{float:left;width:100%;padding:0;margin-bottom:10px;font-weight:500;line-height:1.35}
+legend::before{content:counter(qn,decimal-leading-zero);display:block;font:500 .7rem var(--mono);letter-spacing:.14em;color:var(--red);margin-bottom:3px}
+fieldset>*{clear:both}
+label.o{display:flex;align-items:baseline;gap:.7rem;padding:10px 2px;border-bottom:1px solid var(--rule);counter-increment:o;cursor:pointer}
+label.o::before{content:counter(o,lower-alpha) ".";font:italic 1rem var(--disp);color:var(--soft);width:1.1rem}
+label.o.cb::before{content:none}
+label.o:has(input:checked){color:var(--red);font-style:italic}
+label.o input{order:3;margin:0 2px 0 auto;appearance:none;-webkit-appearance:none;width:19px;height:19px;border:1.5px solid var(--ink);border-radius:52% 47% 50% 50%/48% 53% 47% 52%;flex:none;align-self:center}
+label.o input:checked{background:var(--red);border-color:var(--red);box-shadow:inset 0 0 0 3px var(--paper)}
+.lk{display:flex;justify-content:space-between;max-width:21rem;margin-top:4px}
+.lk label{width:3.1rem;height:3.1rem;display:grid;place-items:center;border:1.5px solid var(--ink);font:400 1.2rem var(--disp);cursor:pointer;border-radius:50% 46% 54% 48%/47% 54% 46% 53%}
+.lk label:nth-child(2){border-radius:46% 54% 49% 51%/54% 46% 52% 48%;transform:translateY(3px)}.lk label:nth-child(3){border-radius:53% 47% 51% 49%/49% 52% 48% 51%}
+.lk label:nth-child(4){border-radius:48% 52% 46% 54%/52% 48% 54% 46%;transform:translateY(-2px)}.lk label:nth-child(5){transform:translateY(2px)}
+.lk label:has(input:checked){background:var(--red);border-color:var(--red);color:var(--paper);transform:rotate(-6deg) scale(1.08)}
+.lk label:has(input:focus-visible){outline:3px solid var(--red);outline-offset:3px}
+.lk input{position:absolute;opacity:0}
+.ends{display:flex;justify-content:space-between;max-width:21rem;font:500 .64rem var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--soft);margin-top:10px}
+button{font:500 .85rem var(--mono);letter-spacing:.12em;text-transform:uppercase;background:var(--ink);color:var(--paper);border:0;padding:16px 26px;border-radius:2px 9px 3px 8px;box-shadow:4px 4px 0 var(--red);cursor:pointer;transition:transform .12s,box-shadow .12s;margin-top:6px}
+button::after{content:"→";margin-left:.8em}
+button:hover{transform:translate(1px,1px);box-shadow:3px 3px 0 var(--red)}button:active{transform:translate(4px,4px);box-shadow:0 0 0 var(--red)}
+button:disabled{background:transparent;color:var(--soft);box-shadow:none;outline:1.5px dashed var(--soft);outline-offset:-1.5px;cursor:default;transform:none}
+button.alt{background:var(--paper2);color:var(--ink);outline:1.5px solid var(--ink);outline-offset:-1.5px;box-shadow:4px 4px 0 var(--ink)}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--red);outline-offset:3px}
+textarea{width:100%;background:transparent;color:var(--ink);border:0;border-bottom:1.5px solid var(--ink);padding:8px 2px;font:italic 1.05rem var(--serif);resize:vertical;border-radius:0}
+.err{color:var(--red);font:500 .75rem var(--mono);letter-spacing:.08em;min-height:1.5em}
+figure.plate{position:relative;margin:34px 6px 28px 0;transform:rotate(-.6deg)}
+figure.plate::before{content:"";position:absolute;top:-13px;left:26px;width:78px;height:24px;background:var(--red);opacity:.82;transform:rotate(-4deg);z-index:1}
+img.v{display:block;width:100%;box-shadow:0 0 0 9px var(--paper2),0 0 0 10px var(--rule)}
+figcaption{font:italic .88rem var(--disp);color:var(--soft);margin:18px 0 0 2.2rem}
+.pts{counter-reset:pt;border-top:1.5px solid var(--ink);margin-top:12px}
+details{border-bottom:1px solid var(--rule)}
+summary{list-style:none;display:flex;align-items:baseline;gap:.5rem;padding:13px 0;font:400 1.2rem var(--disp);cursor:pointer;counter-increment:pt}
+summary::-webkit-details-marker{display:none}summary::before{content:counter(pt,upper-roman) ".";font:500 .7rem var(--mono);color:var(--red);width:2.4rem;flex:none}
+summary::after{content:"+";margin-left:auto;font:300 1.5rem var(--mono);transition:transform .2s}details[open] summary::after{transform:rotate(45deg)}
+details[open] summary{font-style:italic;color:var(--red)}
+details p{margin:0 0 16px 2.9rem;color:var(--soft);max-width:28em;font-size:1rem}
+#fbw{position:relative;aspect-ratio:3/4;background:#000;overflow:hidden;touch-action:none;margin:26px 8px 8px 0;border-radius:3px 20px 4px 16px;box-shadow:0 0 0 8px var(--paper2),0 0 0 9px var(--rule)}
+#fbw video,#fbw canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+
+.acts{display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin:22px 0 8px}.acts button{margin:0}
+.devtag{font:500 .7rem var(--mono);letter-spacing:.06em;color:var(--paper);background:var(--red);padding:6px 10px;display:inline-block;margin:0 0 18px}
+#xrc{position:fixed;inset:0;width:100%;height:100%}
+#ov{position:fixed;inset:0;display:none;flex-direction:column;justify-content:space-between;pointer-events:none;padding:calc(env(safe-area-inset-top) + 12px) 12px calc(env(safe-area-inset-bottom) + 14px)}
+#ov>*{pointer-events:auto}#ov>div:first-child{display:flex;flex-direction:column;align-items:flex-start}
+#hint{background:var(--paper);color:var(--ink);font:italic 1rem/1.35 var(--serif);padding:11px 16px;border:1.5px solid var(--ink);border-radius:3px 14px 4px 11px;max-width:84%;transform:rotate(-.8deg);box-shadow:3px 3px 0 var(--red)}
+#pp{display:none;background:var(--paper);color:var(--ink);max-height:42vh;overflow:auto;border:1.5px solid var(--ink);border-radius:4px 14px 3px 12px;padding:2px 14px 6px;margin-top:12px;width:100%}
+#ovb{display:flex;gap:12px;justify-content:flex-end;flex-wrap:wrap}#ovb button{padding:13px 18px;margin:0}#ovb button::after{content:none}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=Newsreader:ital,opsz,wght@0,6..72,400..600;1,6..72,400&family=DM+Mono:wght@400;500&display=swap"></head><body>
+<main id="app"></main>
+<div id="ov"><div><div id="hint"></div><div id="pp"></div></div><div id="ovb"><button id="pt">Parts</button><button id="rp" class="alt">Move model</button><button id="fin" disabled>Finish</button></div></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+/* ===== CONFIG: set SUBMIT_URL to a Google Apps Script web-app URL (or any endpoint accepting a POST) ===== */
+const CONFIG={SUBMIT_URL:'',MIN_SECONDS:10};
+/* Developer mode: open the page with ?dev at the end of the URL to show Skip buttons, remove waits and stop submissions */
+const DEV=new URLSearchParams(location.search).has('dev');
+const $=s=>document.querySelector(s),app=$('#app');
+const D={pid:'P'+Math.random().toString(36).slice(2,9),started:new Date().toISOString(),ua:navigator.userAgent,dev:DEV,stages:{}};
+let steps=[consent,about],si=0;
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
+
+/* ===== Question bank: two parallel forms (A/B) on the SAME 3D model ===== */
+const BANK={A:[
+{q:'Which component is directly underneath the CPU cooler, hidden by it?',o:['CPU socket','M.2 SSD','RAM slots','I/O ports'],a:'CPU socket'},
+{q:'Which way do the graphics card\'s fans face?',o:['Down, toward the power supply','Up, toward the CPU cooler','Out, toward the open side','In, toward the motherboard'],a:'Down, toward the power supply'},
+{q:'Which component sits at the bottom front of the case?',o:['Drive cage','Power supply','Rear fan','Graphics card'],a:'Drive cage'},
+{q:'Which component sticks out furthest from the motherboard toward the open side?',o:['CPU cooler','RAM slots','M.2 SSD','I/O ports'],a:'CPU cooler'}],
+B:[
+{q:'Which component lies flat on the motherboard between the CPU cooler and the graphics card?',o:['M.2 SSD','RAM slots','I/O ports','CPU socket'],a:'M.2 SSD'},
+{q:'Which component is directly above the power supply?',o:['Graphics card','Drive cage','Front fans','RAM slots'],a:'Graphics card'},
+{q:'Which component sits at the bottom rear of the case?',o:['Power supply','Drive cage','Front fans','CPU cooler'],a:'Power supply'},
+{q:'On which side of the CPU cooler are the RAM slots?',o:['Toward the front of the case','Toward the rear of the case','Above the cooler','Below the cooler'],a:'Toward the front of the case'}]};
+const FMT={'2d':'2D picture','ar':'AR model'};
+const PERC=f=>[['spatial',`The ${f} helped me understand where the components are positioned.`],['focus',`I stayed focused while using the ${f}.`],['ease',`It was easy to look around and interact with the ${f}.`],['clarity',`The components and labels were clear in the ${f}.`],['effort',`I had to put in a lot of mental effort to understand the ${f}.`],['useful',`The ${f} would be useful for learning other topics.`],['discomfort_rev',`I felt dizzy or uncomfortable while using the ${f}.`]];
+const CMP=[['cmp_understand','The AR model helped me understand the PC case better than the 2D picture.'],['cmp_engage','The AR model was more engaging than the 2D picture.'],['cmp_hard','The AR model was harder to use than the 2D picture.'],['cmp_prefer','I would choose the AR model over the 2D picture to study a new topic.']];
+
+/* ===== 3D PC case (units = metres, model ~30 cm long, 32 cm tall, 15 cm wide) ===== */
+const PARTS=[['Motherboard','The main circuit board. Every other component connects to it, directly or by cable.'],
+['CPU socket','Holds the processor (CPU), the main chip that carries out program instructions.'],
+['CPU cooler','Draws heat away from the processor through metal fins and a fan, so the processor does not overheat.'],
+['RAM slots','Hold memory modules (RAM), the fast short-term memory the CPU uses for programs and data currently in use.'],
+['M.2 SSD','A small, fast storage drive that holds the operating system, programs and files. It plugs straight into the motherboard without cables.'],
+['Graphics card','Processes images and video and sends them to the monitor. It has its own fans to cool its chip.'],
+['Power supply','Converts mains electricity into the low voltages the components need, and sends it to them through cables.'],
+['Drive cage','Holds larger storage drives such as hard disk drives.'],
+['Front fans','Pull cool room air into the case.'],
+['Rear fan','Pushes warm air out of the case.'],
+['I/O ports','The back-panel connectors for external devices such as USB drives, monitors, network cables and audio jacks.']];
+const partsHTML=()=>'<div class="pts">'+PARTS.map(([n,t])=>`<details><summary>${n}</summary><p>${t}</p></details>`).join('')+'</div>';
+const track=(el,rec)=>{rec.partsOpened=rec.partsOpened||[];el.addEventListener('toggle',e=>{if(e.target.open)rec.partsOpened.push(e.target.querySelector('summary').textContent)},true)};
+const spin=(m,dx,dy)=>m.quaternion.premultiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(dy*.01,dx*.01,0)));
+function board(){
+ const W=.30,H=.32,Dp=.15,g=new THREE.Group(),G=new THREE.Group();G.position.y=-H/2;g.add(G);
+ const mat=(c,o)=>new THREE.MeshStandardMaterial(Object.assign({color:c,roughness:.5,metalness:0},o||{}));
+ const add=(geo,m,x,y,z)=>{const o=new THREE.Mesh(geo,m);o.position.set(x,y,z);G.add(o);return o};
+ const box=(w,h,d,c,x,y,z,o)=>add(new THREE.BoxGeometry(w,h,d),mat(c,o),x,y,z);
+ const glass=(w,h,d,x,y,z)=>add(new THREE.BoxGeometry(w,h,d),mat(0x9fb4c0,{transparent:true,opacity:.14,depthWrite:false,roughness:.1}),x,y,z);
+ const fan=(ax,x,y,z,sz,th)=>{th=th||.012;const f=new THREE.Group();f.position.set(x,y,z);G.add(f);
+  const fr=ax==='x'?[th,sz,sz]:ax==='y'?[sz,th,sz]:[sz,sz,th];
+  const frame=new THREE.Mesh(new THREE.BoxGeometry(...fr),mat(0x1d2125));f.add(frame);
+  const rot=o=>{if(ax==='x')o.rotation.z=Math.PI/2;if(ax==='z')o.rotation.x=Math.PI/2;return o};
+  f.add(rot(new THREE.Mesh(new THREE.CylinderGeometry(sz*.44,sz*.44,th*1.06,28),mat(0x4a5058))));
+  f.add(rot(new THREE.Mesh(new THREE.CylinderGeometry(sz*.14,sz*.14,th*1.12,18),mat(0x111417))));
+  for(let i=0;i<7;i++){const bl=new THREE.Mesh(new THREE.BoxGeometry(sz*.36,th*.3,sz*.09),mat(0x2b3036));const p=new THREE.Group();p.add(bl);bl.position.x=sz*.24;bl.rotation.x=.5;p.rotation.y=i*Math.PI*2/7;f.add(ax==='y'?p:(()=>{const q=new THREE.Group();q.add(p);if(ax==='x')q.rotation.z=Math.PI/2;else q.rotation.x=Math.PI/2;return q})())}
+  return f};
+ const arrow=(x,y,z,dir)=>{const a=new THREE.Group(),m=mat(0x3d8fd6,{transparent:true,opacity:.75});
+  const sh=new THREE.Mesh(new THREE.CylinderGeometry(.004,.004,.04,10),m);a.add(sh);
+  const hd=new THREE.Mesh(new THREE.ConeGeometry(.01,.02,14),m);hd.position.y=.03;a.add(hd);
+  a.rotation.z=dir*Math.PI/2;a.position.set(x,y,z);G.add(a)};
+ /* case shell: back wall (motherboard tray) and floor solid, other panels glass, open on the viewer side */
+ box(W,H,.004,0x2b2f33,0,H/2,-Dp/2+.002);box(W,.004,Dp,0x2b2f33,0,.002,0);
+ glass(W,.004,Dp,0,H-.002,0);glass(.004,H,Dp,W/2-.002,H/2,0);glass(.004,H,Dp,-W/2+.002,H/2,0);
+ const e=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(W,H,Dp)),new THREE.LineBasicMaterial({color:0x7d858c}));e.position.set(0,H/2,0);G.add(e);
+ [[-.13,-.06],[-.13,.06],[.13,-.06],[.13,.06]].forEach(([x,z])=>add(new THREE.CylinderGeometry(.009,.011,.008,16),mat(0x15191c),x,-.004,z));
+ /* motherboard */
+ const zb=-Dp/2+.008;box(.17,.20,.004,0x0f6b4f,-.055,.20,zb-.002,{roughness:.7});
+ for(let i=0;i<6;i++)box(.10,.0012,.0006,0x2fae84,-.07,.11+i*.03+(i%2)*.006,zb+.0003);
+ /* CPU socket, cooler */
+ box(.046,.046,.004,0xb9a46a,-.05,.25,zb+.002,{metalness:.6});box(.034,.034,.008,0xbfc4c8,-.05,.25,zb+.008,{metalness:.8});
+ for(let i=0;i<14;i++)box(.034,.0022,.078,0xc9ced3,-.05,.218+i*.0048,zb+.049,{metalness:.85,roughness:.3});
+ for(let i=0;i<3;i++)add(new THREE.CylinderGeometry(.0025,.0025,.07,10),mat(0xb87333,{metalness:.8}),-.06+i*.01,.25,zb+.03);
+ fan('x',-.05+.017+.007,.25,zb+.049,.066);
+ /* RAM */
+ [-.012,-.002].forEach(x=>{box(.0045,.088,.032,0x1b1f23,x,.245,zb+.016);box(.0047,.088,.004,0xc4452b,x,.245,zb+.03)});
+ /* M.2 SSD */
+ box(.06,.018,.003,0x1b1f23,-.05,.19,zb+.0015);box(.036,.012,.0006,0xd9d9d9,-.05,.19,zb+.0033);
+ /* PCIe slot + graphics card (fans face down) */
+ box(.09,.006,.008,0x15191c,-.06,.152,zb+.004);
+ box(.17,.03,.058,0x2a2e33,-.04,.135,zb+.029);box(.17,.002,.058,0x9aa0a6,-.04,.151,zb+.029,{metalness:.7});
+ box(.004,.034,.022,0xa0a6ac,-.128,.135,zb+.012,{metalness:.7});
+ fan('y',-.085,.117,zb+.03,.046,.008);fan('y',-.005,.117,zb+.03,.046,.008);
+ /* I/O ports */
+ box(.02,.06,.03,0xc8ccd0,-.135,.265,zb+.015,{metalness:.6});for(let i=0;i<4;i++)box(.003,.008,.012,i==1?0x2a5fd0:0x15191c,-.1465,.245+i*.013,zb+.015);
+ /* power supply, bottom rear */
+ box(.10,.07,.12,0x1f2326,-.096,.039,-.005);box(.05,.03,.0008,0xc9cdd1,-.096,.045,.0555);fan('y',-.096,.0035,-.005,.07,.003);
+ /* drive cage, bottom front */
+ box(.08,.08,.003,0x5b6168,.10,.044,-.055,{metalness:.5});box(.08,.08,.003,0x5b6168,.10,.044,.055,{metalness:.5});box(.08,.003,.11,0x5b6168,.10,.084,0,{metalness:.5});
+ [.03,.058].forEach(y=>box(.072,.016,.10,0xb5bac0,.10,y,0,{metalness:.7,roughness:.35}));
+ /* fans */
+ fan('x',W/2-.012,.14,0,.085);fan('x',W/2-.012,.235,0,.085);fan('x',-W/2+.012,.25,.02,.075);
+ arrow(.10,.14,0,1);arrow(.10,.235,0,1);arrow(-.18,.25,.02,1);
+ /* labels */
+ const lab=(t,x,y,z)=>{const c=document.createElement('canvas');c.width=512;c.height=128;const k=c.getContext('2d');k.fillStyle='rgba(16,36,31,.9)';k.fillRect(0,0,512,128);k.fillStyle='#fff';k.font='bold 50px system-ui,sans-serif';k.textAlign='center';k.textBaseline='middle';k.fillText(t,256,64);
+  const q=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),depthTest:false}));q.renderOrder=9;q.scale.set(.07,.0175,1);q.position.set(x,y,z);G.add(q)};
+ lab('CPU cooler',-.05,.305,.03);lab('RAM slots',.01,.30,-.03);lab('M.2 SSD',-.075,.19,-.05);lab('Graphics card',-.04,.10,.03);
+ lab('Motherboard',.0,.175,-.06);lab('Power supply',-.096,.088,.065);lab('Drive cage',.10,.10,.065);lab('Front fans',.125,.30,.03);
+ lab('Rear fan',-.13,.305,.045);lab('I/O ports',-.135,.225,-.045);
+ return g}
+function lights(s){s.add(new THREE.HemisphereLight(0xffffff,0x445566,1.1));const d=new THREE.DirectionalLight(0xffffff,.8);d.position.set(.3,1,.4);s.add(d)}
+function snapshot(view){const r=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});r.setSize(1000,880);r.setClearColor(0xeef2ec);
+ const s=new THREE.Scene(),c=new THREE.PerspectiveCamera(30,1000/880,.01,5);lights(s);s.add(board());
+ if(view==='side')c.position.set(0,0,.85);else c.position.set(.48,.26,.62);c.lookAt(0,-.01,0);r.render(s,c);
+ const u=r.domElement.toDataURL('image/jpeg',.9);r.dispose();return u}
+
+/* ===== UI helpers ===== */
+const bar=()=>`<div class="prog"><span>${String(si).padStart(2,'0')} / ${String(steps.length-1).padStart(2,'0')}</span><i style="--p:${Math.round(si/(steps.length-1)*100)}%"></i></div>`;
+const screen=h=>{app.innerHTML=bar()+(DEV?'<p class="devtag">Developer mode: Skip buttons shown, waits removed, nothing is submitted.</p>':'')+h;scrollTo(0,0)};
+const skipBtn=()=>DEV?'<button type="button" class="alt" id="sk">Skip</button>':'';
+const next=()=>{si++;steps[si]()};
+const mc=(k,q,o)=>`<fieldset data-r data-n="${k}"><legend>${q}</legend>${o.map(v=>`<label class="o"><input type="radio" name="${k}" value="${v}"> ${v}</label>`).join('')}</fieldset>`;
+const lk=(k,q)=>`<fieldset data-r data-n="${k}"><legend>${q}</legend><div class="lk">${[1,2,3,4,5].map(n=>`<label><input type="radio" name="${k}" value="${n}">${n}</label>`).join('')}</div><div class="ends"><span>Strongly disagree</span><span>Strongly agree</span></div></fieldset>`;
+function form(title,intro,html,cb){screen(`<h2>${title}</h2><p class="in">${intro}</p><form id="f">${html}<p class="err" id="e"></p><div class="acts"><button>Continue</button>${DEV?'<button type="button" class="alt" id="sk">Skip</button>':''}</div></form>`);
+ if(DEV)$('#sk').onclick=()=>cb({skipped:'yes'});
+ $('#f').onsubmit=e=>{e.preventDefault();const fd=new FormData(e.target);for(const f of e.target.querySelectorAll('fieldset[data-r]'))if(!fd.has(f.dataset.n)){$('#e').textContent='Please answer every question.';f.scrollIntoView({block:'center'});return}cb(Object.fromEntries(fd));}}
+function timed(btn,sec,label){if(DEV){btn.disabled=false;btn.textContent=label;return}let t=sec;btn.disabled=true;const i=setInterval(()=>{t--;btn.textContent=t>0?`${label} (${t}s)`:label;if(t<=0){btn.disabled=false;clearInterval(i)}},1000);btn.textContent=`${label} (${t}s)`}
+
+/* ===== Steps ===== */
+function consent(){screen(`<h1>WebAR PC Hardware Learning</h1>
+<p>You will study the inside of a desktop computer case in two ways (a 2D picture and an AR model), answer short quizzes, and rate each experience.</p>
+<p><b>Your privacy:</b> participation is voluntary and you can stop at any time. We do not collect your name, matric number, email or IP address. The camera is used only on your phone to show the AR model; no photos or video are recorded or sent. This is not graded.</p>
+<form id="f" style="margin-top:30px"><label class="o cb"><input type="checkbox" id="ok"> I am 18 or older and agree to take part.</label><p class="err" id="e"></p><div class="acts"><button>Start</button>${skipBtn()}</div></form>`);
+ if(DEV)$('#sk').onclick=next;
+ $('#f').onsubmit=e=>{e.preventDefault();if(!$('#ok').checked){$('#e').textContent='Please tick the box to continue.';return}next()}}
+function about(){form('About you','Two quick questions.',
+ mc('device','Which phone are you using?',['iPhone','Android','Other'])+mc('prior_ar','How often have you used AR before?',['Never','1 to 3 times','Often']),a=>{D.about=a;
+ D.order=Math.random()<.5?['2d','ar']:['ar','2d'];D.forms=Math.random()<.5?['A','B']:['B','A'];
+ steps=[consent,about];D.order.forEach((m,i)=>steps.push(()=>stage(m,i),()=>quiz(m,D.forms[i]),()=>perc(m)));steps.push(compare,done);
+ si=1;next()})}
+function stage(m,i){D.stages[m]=D.stages[m]||{pos:i+1};const t0=Date.now();
+ const fin=()=>{D.stages[m].seconds=Math.round((Date.now()-t0)/1000);next()};
+ const skip=()=>{D.stages[m].skipped=true;fin()};
+ if(m==='2d'){screen(`<h2>Study the PC case</h2><p class="in">Look carefully at both pictures for at least ${CONFIG.MIN_SECONDS} seconds. You will be quizzed from memory afterwards.</p>
+<figure class="plate"><img class="v" alt="Side view of the inside of a PC case, side panel removed, with labelled components" src="${snapshot('side')}"><figcaption>Figure 1. Side view, side panel removed.</figcaption></figure>
+<figure class="plate"><img class="v" alt="Angled view of the inside of a PC case from the front, with labelled components" src="${snapshot('angle')}"><figcaption>Figure 2. Angled view from the front.</figcaption></figure>
+<div class="acts"><button id="go"></button>${skipBtn()}</div>
+<h3 class="notes">Component descriptions<em>Tap a part to read about it</em></h3>${partsHTML()}`);
+  track($('.pts'),D.stages[m]);const b=$('#go');timed(b,CONFIG.MIN_SECONDS,'Continue');b.onclick=fin;if(DEV)$('#sk').onclick=skip}
+ else{screen(`<h2>Study the PC case in AR</h2><p class="in">Point your camera at a flat surface such as a table. When the yellow ring appears, tap to place the case. Drag to spin it in any direction, pinch to resize, and tap Parts to read about each component. You will be quizzed from memory afterwards.</p><div class="acts"><button id="go">Start AR</button>${skipBtn()}</div>`);
+  $('#go').onclick=()=>startAR(D.stages[m],fin);if(DEV)$('#sk').onclick=skip}}
+function quiz(m,f){const items=BANK[f].map(x=>({...x,o:shuffle(x.o)}));D.stages[m].form=f;
+ form('Quiz from memory','Do not go back to the model. Choose the best answer.',items.map((x,i)=>mc('q'+i,x.q,x.o)).join(''),a=>{
+  D.stages[m].items=items.map((x,i)=>({q:x.q,chosen:a['q'+i],correct:a['q'+i]===x.a}));D.stages[m].score=D.stages[m].items.filter(x=>x.correct).length;D.stages[m].max=items.length;next()})}
+function perc(m){form(`Your experience with the ${FMT[m]}`,'Rate how much you agree.',PERC(FMT[m]).map(([k,q])=>lk(k,q)).join(''),a=>{D.stages[m].perception=a;next()})}
+function compare(){form('Comparing the two','Now think about both the 2D picture and the AR model.',CMP.map(([k,q])=>lk(k,q)).join('')+mc('preference','Overall, which helped you learn more?',['The AR model','The 2D picture','No difference'])+`<fieldset data-n="comment"><legend>Anything else? (optional, please do not include personal details)</legend><textarea name="comment" rows="3"></textarea></fieldset>`,a=>{D.compare=a;next()})}
+function done(){D.finished=new Date().toISOString();D.totalSeconds=Math.round((new Date(D.finished)-new Date(D.started))/1000);
+ screen(`<h2>Thank you</h2><p id="s" class="in">Saving your answers…</p><p><button id="dl" class="alt" hidden>Download a backup copy</button></p>`);
+ const j=JSON.stringify(D);const set=t=>$('#s').textContent=t;
+ if(DEV){set('Developer mode: nothing was submitted. Download the copy below to inspect the data.');$('#dl').hidden=false}
+ else if(CONFIG.SUBMIT_URL){fetch(CONFIG.SUBMIT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:j}).then(()=>set('Your answers were submitted. You can close this page.')).catch(()=>{set('Could not submit. Please download the backup copy and send it to the researcher.');$('#dl').hidden=false})}
+ else{set('Preview mode: no server is set, so nothing was sent. Download the copy below to inspect the data.');$('#dl').hidden=false}
+ $('#dl').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([j],{type:'application/json'}));a.download=D.pid+'.json';a.click()}}
+
+/* ===== AR stage ===== */
+async function startAR(rec,fin){
+ if(!navigator.xr){rec.arMode='fallback';rec.arReason=isSecureContext?'this browser has no WebXR (iPhone/Safari, Firefox or an in-app browser)':'the page is not served over HTTPS';return fallback(rec,fin)}
+ try{rec.arMode='webxr';return await webxr(rec,fin)}
+ catch(e){rec.arMode='fallback';rec.arReason=(e&&e.name||'Error')+': '+(e&&e.message||e);const x=$('#xrc');if(x)x.remove();$('#ov').style.display='none';fallback(rec,fin)}}
+async function webxr(rec,fin){
+ const o=$('#ov'),hint=$('#hint'),R=new THREE.WebGLRenderer({antialias:true,alpha:true});
+ R.setPixelRatio(devicePixelRatio);R.setSize(innerWidth,innerHeight);R.xr.enabled=true;R.domElement.id='xrc';
+ const S=new THREE.Scene(),C=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,.01,20);lights(S);
+ const M=board();M.visible=false;S.add(M);
+ const ring=new THREE.Mesh(new THREE.RingGeometry(.07,.09,32).rotateX(-Math.PI/2),new THREE.MeshBasicMaterial({color:0xe0a100}));ring.matrixAutoUpdate=false;ring.visible=false;S.add(ring);
+ const s=await navigator.xr.requestSession('immersive-ar',{requiredFeatures:['hit-test'],optionalFeatures:['dom-overlay'],domOverlay:{root:o}});
+ document.body.appendChild(R.domElement);R.xr.setReferenceSpaceType('local');await R.xr.setSession(s);
+ o.style.display='flex';const t0=Date.now();let placed=false,hit=false,src=null,asked=false,placeT=null;
+ const say=t=>hint.textContent=t;say('Move your phone slowly over a flat surface…');
+ const fb=$('#fin');timed(fb,CONFIG.MIN_SECONDS,'Finish');fb.onclick=()=>s.end();
+ $('#rp').onclick=()=>{placed=false;M.visible=false;say('Aim at a flat surface and tap to place.')};
+ const pp=$('#pp');pp.innerHTML=partsHTML();pp.style.display='none';track(pp,rec);$('#pt').onclick=()=>{pp.style.display=pp.style.display==='block'?'none':'block'};pp.ontouchstart=pp.ontouchmove=e=>e.stopPropagation();
+ for(const b of [...o.querySelectorAll('button'),pp])b.addEventListener('beforexrselect',e=>e.preventDefault());
+ s.addEventListener('select',()=>{if(!placed&&hit){M.position.setFromMatrixPosition(ring.matrix);M.position.y+=.17;M.visible=true;ring.visible=false;placed=true;placeT=placeT||Math.round((Date.now()-t0)/1000);say('Drag to spin in any direction, pinch to resize.')}});
+ const g={x:null,y:null,d:null};
+ o.ontouchstart=o.ontouchmove=e=>{if(!placed)return;const t=e.touches;if(t.length===1){if(e.type==='touchmove'&&g.x!==null)spin(M,t[0].clientX-g.x,t[0].clientY-g.y);g.x=t[0].clientX;g.y=t[0].clientY;g.d=null}else if(t.length===2){const d=Math.hypot(t[0].clientX-t[1].clientX,t[0].clientY-t[1].clientY);if(g.d)M.scale.multiplyScalar(d/g.d);M.scale.clampScalar(.4,3);g.d=d;g.x=null}};
+ o.ontouchend=()=>{g.x=null;g.d=null};
+ R.setAnimationLoop((t,f)=>{if(f){const rs=R.xr.getReferenceSpace();
+  if(!asked){asked=true;s.requestReferenceSpace('viewer').then(v=>s.requestHitTestSource({space:v})).then(h=>src=h)}
+  if(src&&!placed){const h=f.getHitTestResults(src);if(h.length){ring.matrix.fromArray(h[0].getPose(rs).transform.matrix);ring.visible=hit=true;say('Tap to place the case.')}else{ring.visible=hit=false}}}
+  R.render(S,C)});
+ s.addEventListener('end',()=>{R.setAnimationLoop(null);R.dispose();R.domElement.remove();o.style.display='none';pp.style.display='none';rec.placedAtSec=placeT;rec.placed=placed;fin()})}
+async function fallback(rec,fin){
+ screen(`<h2>Study the PC case in 3D</h2><p class="in">AR surface tracking is not available on this phone or browser, so use this 3D view instead.<br><small>Reason: ${rec.arReason||'unknown'}</small> Drag to spin it in any direction and pinch to resize. You will be quizzed from memory afterwards.</p><div id="fbw"><video id="fv" playsinline muted autoplay></video></div><div class="acts"><button id="go"></button></div><h3 class="notes">Component descriptions<em>Tap a part to read about it</em></h3>${partsHTML()}`);track($('.pts'),rec);
+ const t0=Date.now();let stream=null;try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});$('#fv').srcObject=stream}catch(e){rec.camera='denied'}
+ const R=new THREE.WebGLRenderer({antialias:true,alpha:true}),w=$('#fbw');R.setPixelRatio(devicePixelRatio);R.setSize(w.clientWidth,w.clientHeight);w.appendChild(R.domElement);
+ const S=new THREE.Scene(),C=new THREE.PerspectiveCamera(45,w.clientWidth/w.clientHeight,.01,5);lights(S);const M=board();S.add(M);C.position.set(.32,.2,.62);C.lookAt(0,0,0);
+ const g={x:null,y:null,d:null};let on=true;
+ w.ontouchstart=w.ontouchmove=e=>{const t=e.touches;if(t.length===1){if(e.type==='touchmove'&&g.x!==null)spin(M,t[0].clientX-g.x,t[0].clientY-g.y);g.x=t[0].clientX;g.y=t[0].clientY;g.d=null}else if(t.length===2){const d=Math.hypot(t[0].clientX-t[1].clientX,t[0].clientY-t[1].clientY);if(g.d)M.scale.multiplyScalar(d/g.d);M.scale.clampScalar(.4,3);g.d=d;g.x=null}};
+ w.ontouchend=()=>{g.x=null;g.d=null};
+ (function loop(){if(!on)return;R.render(S,C);requestAnimationFrame(loop)})();
+ const b=$('#go');timed(b,CONFIG.MIN_SECONDS,'Continue');b.onclick=()=>{on=false;R.dispose();if(stream)stream.getTracks().forEach(t=>t.stop());fin()}}
+
+consent();
+</script></body></html>
