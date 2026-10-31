@@ -100,6 +100,13 @@ details p{font-size:.97rem}
 #hint{font:400 .98rem/1.4 var(--serif)}
 .devbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 18px}.devbar .devtag{margin:0}
 .devbar button{padding:8px 14px;box-shadow:none;font-size:.85rem}
+
+/* ---- Alignment: everything on one left edge ---- */
+fieldset,fieldset:nth-of-type(even),fieldset:nth-of-type(3n){margin-left:0}
+.in,main>p:not(.in),h4+p{margin-left:0}
+figcaption{margin-left:0}
+.lk label,.lk label:nth-child(n){transform:none}
+.lk label:has(input:checked){transform:scale(1.06)}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
 </style><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=Source+Sans+3:wght@400;600&display=swap"></head><body>
 <main id="app"></main>
